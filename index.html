@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A preliminary interactive ideal-gas state and energy-change practice activity by Dr. Nuha Aljuneidi.">
+  <title>Ideal Gas Infinity Quiz | Dr. Nuha Aljuneidi</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#quiz">Skip to quiz</a><header class="site-header"><div class="brand"><span class="brand-mark">∞</span><span><strong>Ideal Gas Infinity Quiz</strong><small>Dr. Nuha Aljuneidi</small></span></div><button id="home" class="text-button">Registration</button></header><main id="quiz">
+<section id="welcome" class="intro"><p class="eyebrow">Fixed mass · two states · two methods</p><h1>One gas. Two states.<br>Infinite practice.</h1><p class="lead">Solve the state properties, compare energy changes, and practice interpolation.</p><form id="registration" class="identity-panel"><div><label for="first">First name</label><input id="first" autocomplete="given-name" required></div><div><label for="last">Last name</label><input id="last" autocomplete="family-name" required></div><div class="field-wide"><label for="email">ERAU student email</label><input id="email" type="email" autocomplete="email" pattern="[^\s@]+@my\.erau\.edu" required></div><div><label for="section">Course section</label><select id="section" required><option value="">Choose section</option><option>Section 1 — 8:00–8:50 AM</option><option>Section 2 — 9:00–9:50 AM</option><option>Other section</option></select></div><div id="otherWrap" hidden><label for="other">Other section</label><input id="other"></div><div><label for="mode">Mode</label><select id="mode"><option value="practice">Practice preview</option><option value="official">Official preview — not connected</option></select></div><button class="primary-button">Assign my case</button><p class="notice field-wide">Preliminary preview: source PDFs missing. Numerical table lookups are unverified; official submissions are disabled.</p></form></section>
+<section id="workspace" class="workspace" hidden><aside class="case-rail"><p id="badge" class="mode-badge practice"></p><p class="eyebrow">Given data</p><h2 id="caseTitle"></h2><div id="givens"></div><p class="assignment-note">Absolute P in kPa; T in K; total V in m³; mass in kg. Fixed mass at both states.</p><details><summary>Method reference</summary><p>PV = mRT; v = V/m.<br>R = R̄/M (Table A–1).</p><p>At constant pressure: T₂/T₁ = V₂/V₁.</p><p>Tavg = (T₁ + T₂)/2.<br>Δu = cv ΔT; Δh = cp ΔT.<br>ΔU = m Δu; ΔH = m Δh.</p><p>Air: Δu = u₂ − u₁, Δh = h₂ − h₁ (A–22, kJ/kg).</p><p>Other gases: divide A–23 molar property differences by M (kg/kmol).</p></details><details><summary>Teaching tables</summary><p>Upload the three source PDFs to enable verified reference tables. This preview does not supply invented lookup values.</p></details></aside><div class="quiz-column"><div class="notice">Not connected • Table values await verification. Checks assess entered-value arithmetic only, except PV = mRT and Tavg.</div><div id="steps"></div><div class="actions"><button id="check" class="secondary-button">Check my work</button><button id="submit" class="primary-button" disabled>Submit — unavailable</button><button id="next" class="secondary-button">New practice case</button></div><section id="results" class="results" aria-live="polite">Enter your work, then check it.</section></div></section></main><footer><span>Preliminary teaching preview</span><span>© Dr. Nuha Aljuneidi</span></footer>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
