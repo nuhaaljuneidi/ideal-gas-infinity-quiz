@@ -75,7 +75,8 @@ function renderCase(c,name,mode=quizMode){
   $('practicePanel').hidden=true;
   $('caseNumber').textContent=c.id;
   $('gas').textContent=c.gas;
-  $('given').textContent=`T1 = ${c.T1} K, T2 = ${c.T2} K`;
+  const tUnit=c.units==='english'?'R':'K';
+  $('given').textContent=`T1 = ${c.T1} ${tUnit}, T2 = ${c.T2} ${tUnit}`;
   $('find').textContent=c.find.map(p=>p.symbol).join('; ');
   $('assignmentNote').textContent=mode==="official"?`Assigned to ${name}. This is your protected official Case ${c.id}.`:`Practice for ${name}. Case ${c.id} does not change your official Case ${officialCaseNumber}.`;
   $('propertyInputs').innerHTML=c.find.map((p,i)=>`<div class="property-field"><label for="prop${i}">${p.symbol}</label><div class="input-row"><input id="prop${i}" type="number" inputmode="decimal" step="any" aria-describedby="unit${i}"><span class="unit" id="unit${i}">${p.unit}</span></div></div>`).join('');
@@ -116,7 +117,10 @@ $('identityForm').addEventListener('submit',async e=>{
   finally{button.disabled=false;button.textContent="Assign my case"}
 });
 $('hintButton').addEventListener('click',()=>{
-  $('methodHint').textContent="Constant-specific-heat method: find Tavg = (T1+T2)/2, then read cp and cv for the gas from Table A-20 at Tavg (interpolate between rows if Tavg isn't listed). Δh = cp·(T2−T1); Δu = cv·(T2−T1). Variable-specific-heat method: for air, read h and u directly from Table A-22 at T1 and T2; for other gases, read molar h̄ and ū from Table A-23 and divide by the molar mass M from Table A-1. Either way, Δh = h2−h1 and Δu = u2−u1.";
+  const english=activeCase&&activeCase.units==='english';
+  $('methodHint').textContent=english
+    ? "Constant-specific-heat method: find Tavg = (T1+T2)/2 in °R, then CONVERT to °F (Tavg°F = Tavg°R − 459.67) before reading cp and cv from Table A-20E, which is tabulated against °F (interpolate between rows if Tavg°F isn't listed). Δh = cp·(T2−T1); Δu = cv·(T2−T1) — using T1, T2 in °R (or °F; the difference is the same size either way). Variable-specific-heat method: for air, read h and u directly from Table A-22E at T1 and T2 in °R; for other gases, read molar h̄ and ū from Table A-23E (also tabulated in °R) and divide by the molar mass M from Table A-1E. Either way, Δh = h2−h1 and Δu = u2−u1."
+    : "Constant-specific-heat method: find Tavg = (T1+T2)/2, then read cp and cv for the gas from Table A-20 at Tavg (interpolate between rows if Tavg isn't listed). Δh = cp·(T2−T1); Δu = cv·(T2−T1). Variable-specific-heat method: for air, read h and u directly from Table A-22 at T1 and T2; for other gases, read molar h̄ and ū from Table A-23 and divide by the molar mass M from Table A-1. Either way, Δh = h2−h1 and Δu = u2−u1.";
   $('methodHint').hidden=false;
 });
 $('checkButton').addEventListener('click',async()=>{
