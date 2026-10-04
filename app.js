@@ -81,7 +81,7 @@ function renderCase(c,name,mode=quizMode){
   $('assignmentNote').textContent=mode==="official"
     ?`Assigned to ${name}. This is your protected official Case ${c.id}.`
     :isGuest
-      ?`Guest practice for ${name}. Nothing is recorded.`
+      ?`Guest practice for ${name}. Practice sessions aren't recorded.`
       :`Practice for ${name}. Case ${c.id} does not change your official Case ${officialCaseNumber}.`;
   $('propertyInputs').innerHTML=c.find.map((p,i)=>`<div class="property-field"><label for="prop${i}">${p.symbol}</label><div class="input-row"><input id="prop${i}" type="number" inputmode="decimal" step="any" aria-describedby="unit${i}"><span class="unit" id="unit${i}">${p.unit}</span></div></div>`).join('');
   resetResponses();
@@ -148,15 +148,24 @@ $('checkButton').addEventListener('click',async()=>{
 $('randomPractice').addEventListener('click',()=>practiceCase("random"));
 $('nextPractice').addEventListener('click',()=>practiceCase("next"));
 $('startOver').addEventListener('click',()=>location.reload());
-$('guestButton').addEventListener('click',()=>{
-  const firstName=$('firstName').value.trim()||'Guest';
+$('guestButton').addEventListener('click',async()=>{
+  const firstName=$('firstName').value.trim();
   const lastName=$('lastName').value.trim();
+  $('firstName').setAttribute('aria-invalid',firstName?'false':'true');
+  $('lastName').setAttribute('aria-invalid',lastName?'false':'true');
+  if(!firstName||!lastName){
+    const firstInvalid=document.querySelector('#identityForm [aria-invalid="true"]');
+    if(firstInvalid)firstInvalid.focus();
+    return;
+  }
   const name=`${firstName} ${lastName}`.trim();
+  const email=normalizeEmail($('erauEmail').value); // optional for guests, not validated
   currentDisplayName=name;
   isGuest=true;
   officialCaseNumber=null;
   officialSubmitted=false;
   practiceAttempt=0;
+  try{await api({action:"guestLog",firstName,lastName,email,section:currentSectionValue()})}catch(error){/* non-blocking: guest access still proceeds even if logging fails */}
   const idx=Math.floor(Math.random()*IDEALGAS_CASES.length);
   renderCase(IDEALGAS_CASES[idx],name,"practice");
   $('welcome').hidden=true;$('workspace').hidden=false;
