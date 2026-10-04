@@ -34,10 +34,10 @@
           <input id="lastName" name="lastName" autocomplete="family-name" required>
         </div>
         <div class="field-wide">
-          <label for="erauEmail">ERAU student email</label>
+          <label for="erauEmail">ERAU email</label>
           <input id="erauEmail" name="erauEmail" type="email" autocomplete="email" aria-describedby="emailError" required>
           <span class="field-error" id="emailError" role="alert"></span>
-          <small>Used only to assign and restore your case. Must end in @my.erau.edu.</small>
+          <small>Used only to assign and restore your official case. Must end in @erau.edu or @my.erau.edu — not a student or staff/faculty address? Use guest access below for practice only.</small>
         </div>
         <div>
           <label for="courseSection">Course section</label>
@@ -55,6 +55,8 @@
           <span class="field-error" id="otherSectionError" role="alert"></span>
         </div>
         <button class="primary-button" type="submit">Assign my case</button>
+        <button class="secondary-button" type="button" id="guestButton">Continue as guest (practice only)</button>
+        <p class="hint field-wide">Guest access gives unlimited practice cases with the same feedback, but nothing is recorded and there is no official case to submit.</p>
       </form>
     </section>
 

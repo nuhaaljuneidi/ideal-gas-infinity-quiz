@@ -1,6 +1,6 @@
 const $=id=>document.getElementById(id);
-const ERAU_EMAIL_RE=/^[^\s@]+@my\.erau\.edu$/i;
-let activeCase=null,officialCaseNumber=null,quizMode="official",officialSubmitted=false,practiceAttempt=0,currentDisplayName="";
+const ERAU_EMAIL_RE=/^[^\s@]+@(my\.)?erau\.edu$/i;
+let activeCase=null,officialCaseNumber=null,quizMode="official",officialSubmitted=false,practiceAttempt=0,currentDisplayName="",isGuest=false;
 
 function hash(text){let h=2166136261;for(const ch of text.trim().toLowerCase()){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
 function assignmentKey(email){return `idealgas-infinity:${email}`}
@@ -26,7 +26,7 @@ function validateIdentityForm(){let valid=true;
   const email=normalizeEmail($('erauEmail').value);
   const emailError=$('emailError');
   if(!email||!isValidErauEmail(email)){
-    emailError.textContent="Enter your ERAU student email ending in @my.erau.edu.";
+    emailError.textContent="Enter your ERAU email ending in @erau.edu or @my.erau.edu, or use guest access below.";
     $('erauEmail').setAttribute('aria-invalid','true');
     valid=false;
   } else {
@@ -78,7 +78,11 @@ function renderCase(c,name,mode=quizMode){
   const tUnit=c.units==='english'?'R':'K';
   $('given').textContent=`T1 = ${c.T1} ${tUnit}, T2 = ${c.T2} ${tUnit}`;
   $('find').textContent=c.find.map(p=>p.symbol).join('; ');
-  $('assignmentNote').textContent=mode==="official"?`Assigned to ${name}. This is your protected official Case ${c.id}.`:`Practice for ${name}. Case ${c.id} does not change your official Case ${officialCaseNumber}.`;
+  $('assignmentNote').textContent=mode==="official"
+    ?`Assigned to ${name}. This is your protected official Case ${c.id}.`
+    :isGuest
+      ?`Guest practice for ${name}. Nothing is recorded.`
+      :`Practice for ${name}. Case ${c.id} does not change your official Case ${officialCaseNumber}.`;
   $('propertyInputs').innerHTML=c.find.map((p,i)=>`<div class="property-field"><label for="prop${i}">${p.symbol}</label><div class="input-row"><input id="prop${i}" type="number" inputmode="decimal" step="any" aria-describedby="unit${i}"><span class="unit" id="unit${i}">${p.unit}</span></div></div>`).join('');
   resetResponses();
 }
@@ -95,6 +99,7 @@ $('identityForm').addEventListener('submit',async e=>{
     if(firstInvalid)firstInvalid.focus();
     return;
   }
+  isGuest=false;
   const firstName=$('firstName').value.trim();
   const lastName=$('lastName').value.trim();
   const email=normalizeEmail($('erauEmail').value);
@@ -132,12 +137,28 @@ $('checkButton').addEventListener('click',async()=>{
   r.innerHTML=`<h2>${all?'Energy changes verified':'Review your work'}</h2><ul class="result-list">${checks.map(x=>`<li class="${x.ok?'correct':'incorrect'}">${x.p.symbol}: ${x.ok?'within the accepted table range':'check the table value, interpolation, and units'}</li>`).join('')}</ul>${all?`<p><strong>${quizMode==="official"?'Official case complete.':'Practice case complete.'}</strong></p>`:'<p>Revise only the marked items, then check again.</p>'}`;
   r.hidden=false;
   r.scrollIntoView({behavior:'smooth',block:'nearest'});
-  const email=normalizeEmail($('erauEmail').value);
-  const payload={action:"submit",mode:quizMode,firstName:$('firstName').value.trim(),lastName:$('lastName').value.trim(),email,section:currentSectionValue(),caseNumber:activeCase.id,attemptNumber:quizMode==="practice"?practiceAttempt:1,answers:checks.map(x=>({symbol:x.p.symbol,value:Number.isFinite(x.entered)?x.entered:null,correct:x.ok})),complete:all};
-  try{await api(payload)}catch(error){r.insertAdjacentHTML('beforeend',`<p class="incorrect">Your work was checked, but it was not recorded. ${error.message}</p>`);return}
-  if(all&&quizMode==="official"){localStorage.setItem(completionKey(payload.email),"1");setTimeout(()=>showCompletedOfficial(currentDisplayName),550)}
-  else if(all&&quizMode==="practice"){$('practicePanel').hidden=false;$('practicePanel').querySelector('.eyebrow').textContent="Practice case complete";$('practicePanel').querySelector('h2').textContent="Choose another case"}
+  if(!isGuest){ // guest attempts are never recorded, even once a backend is configured
+    const email=normalizeEmail($('erauEmail').value);
+    const payload={action:"submit",mode:quizMode,firstName:$('firstName').value.trim(),lastName:$('lastName').value.trim(),email,section:currentSectionValue(),caseNumber:activeCase.id,attemptNumber:quizMode==="practice"?practiceAttempt:1,answers:checks.map(x=>({symbol:x.p.symbol,value:Number.isFinite(x.entered)?x.entered:null,correct:x.ok})),complete:all};
+    try{await api(payload)}catch(error){r.insertAdjacentHTML('beforeend',`<p class="incorrect">Your work was checked, but it was not recorded. ${error.message}</p>`);return}
+    if(all&&quizMode==="official"){localStorage.setItem(completionKey(payload.email),"1");setTimeout(()=>showCompletedOfficial(currentDisplayName),550)}
+  }
+  if(all&&quizMode==="practice"){$('practicePanel').hidden=false;$('practicePanel').querySelector('.eyebrow').textContent="Practice case complete";$('practicePanel').querySelector('h2').textContent="Choose another case"}
 });
 $('randomPractice').addEventListener('click',()=>practiceCase("random"));
 $('nextPractice').addEventListener('click',()=>practiceCase("next"));
 $('startOver').addEventListener('click',()=>location.reload());
+$('guestButton').addEventListener('click',()=>{
+  const firstName=$('firstName').value.trim()||'Guest';
+  const lastName=$('lastName').value.trim();
+  const name=`${firstName} ${lastName}`.trim();
+  currentDisplayName=name;
+  isGuest=true;
+  officialCaseNumber=null;
+  officialSubmitted=false;
+  practiceAttempt=0;
+  const idx=Math.floor(Math.random()*IDEALGAS_CASES.length);
+  renderCase(IDEALGAS_CASES[idx],name,"practice");
+  $('welcome').hidden=true;$('workspace').hidden=false;
+  $('workspace').scrollIntoView({behavior:'smooth'});
+});
