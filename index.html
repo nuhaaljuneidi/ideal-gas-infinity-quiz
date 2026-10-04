@@ -3,16 +3,102 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="A preliminary interactive ideal-gas state and energy-change practice activity by Dr. Nuha Aljuneidi.">
+  <meta name="description" content="An interactive ideal-gas enthalpy and internal-energy practice activity by Dr. Nuha Aljuneidi.">
   <title>Ideal Gas Infinity Quiz | Dr. Nuha Aljuneidi</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<a class="skip-link" href="#quiz">Skip to quiz</a><header class="site-header"><div class="brand"><span class="brand-mark">∞</span><span><strong>Ideal Gas Infinity Quiz</strong><small>Dr. Nuha Aljuneidi</small></span></div><button id="home" class="text-button">Registration</button></header><main id="quiz">
-<section id="welcome" class="intro"><p class="eyebrow">Fixed mass · two states · two methods</p><h1>One gas. Two states.<br>Infinite practice.</h1><p class="lead">Solve the state properties, compare energy changes, and practice interpolation.</p><form id="registration" class="identity-panel"><div><label for="first">First name</label><input id="first" autocomplete="given-name" required></div><div><label for="last">Last name</label><input id="last" autocomplete="family-name" required></div><div class="field-wide"><label for="email">ERAU student email</label><input id="email" type="email" autocomplete="email" pattern="[^\s@]+@my\.erau\.edu" required></div><div><label for="section">Course section</label><select id="section" required><option value="">Choose section</option><option>Section 1 — 8:00–8:50 AM</option><option>Section 2 — 9:00–9:50 AM</option><option>Other section</option></select></div><div id="otherWrap" hidden><label for="other">Other section</label><input id="other"></div><div><label for="mode">Mode</label><select id="mode"><option value="practice">Practice preview</option><option value="official">Official preview — not connected</option></select></div><button class="primary-button">Assign my case</button><p class="notice field-wide">Preliminary preview: source PDFs missing. Numerical table lookups are unverified; official submissions are disabled.</p></form></section>
-<section id="workspace" class="workspace" hidden><aside class="case-rail"><p id="badge" class="mode-badge practice"></p><p class="eyebrow">Given data</p><h2 id="caseTitle"></h2><div id="givens"></div><p class="assignment-note">Absolute P in kPa; T in K; total V in m³; mass in kg. Fixed mass at both states.</p><details><summary>Method reference</summary><p>PV = mRT; v = V/m.<br>R = R̄/M (Table A–1).</p><p>At constant pressure: T₂/T₁ = V₂/V₁.</p><p>Tavg = (T₁ + T₂)/2.<br>Δu = cv ΔT; Δh = cp ΔT.<br>ΔU = m Δu; ΔH = m Δh.</p><p>Air: Δu = u₂ − u₁, Δh = h₂ − h₁ (A–22, kJ/kg).</p><p>Other gases: divide A–23 molar property differences by M (kg/kmol).</p></details><details><summary>Teaching tables</summary><p>Upload the three source PDFs to enable verified reference tables. This preview does not supply invented lookup values.</p></details></aside><div class="quiz-column"><div class="notice">Not connected • Table values await verification. Checks assess entered-value arithmetic only, except PV = mRT and Tavg.</div><div id="steps"></div><div class="actions"><button id="check" class="secondary-button">Check my work</button><button id="submit" class="primary-button" disabled>Submit — unavailable</button><button id="next" class="secondary-button">New practice case</button></div><section id="results" class="results" aria-live="polite">Enter your work, then check it.</section></div></section></main><footer><span>Preliminary teaching preview</span><span>© Dr. Nuha Aljuneidi</span></footer>
-<script src="config.js"></script>
-<script src="app.js"></script>
+  <a class="skip-link" href="#quiz">Skip to quiz</a>
+  <header class="site-header">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">∞</span>
+      <span><strong>Ideal Gas Infinity Quiz</strong><small>Dr. Nuha Aljuneidi</small></span>
+    </div>
+    <button class="text-button" id="startOver" type="button">Start over</button>
+  </header>
+
+  <main id="quiz">
+    <section class="intro" id="welcome">
+      <p class="eyebrow">Enthalpy and internal-energy changes · individual assignment</p>
+      <h1>One gas. Two states.<br>Infinite practice.</h1>
+      <p class="lead">Compute Δh and Δu for your assigned ideal-gas case by two methods, then compare them. After submitting it successfully, continue with unlimited practice cases.</p>
+
+      <form class="identity-panel" id="identityForm" novalidate>
+        <div>
+          <label for="firstName">First name</label>
+          <input id="firstName" name="firstName" autocomplete="given-name" required>
+        </div>
+        <div>
+          <label for="lastName">Last name</label>
+          <input id="lastName" name="lastName" autocomplete="family-name" required>
+        </div>
+        <div class="field-wide">
+          <label for="erauEmail">ERAU student email</label>
+          <input id="erauEmail" name="erauEmail" type="email" autocomplete="email" aria-describedby="emailError" required>
+          <span class="field-error" id="emailError" role="alert"></span>
+          <small>Used only to assign and restore your case. Must end in @my.erau.edu.</small>
+        </div>
+        <div>
+          <label for="courseSection">Course section</label>
+          <select id="courseSection" name="courseSection" aria-describedby="sectionError" required>
+            <option value="" disabled selected>Select your section</option>
+            <option value="Section 1 — 8:00–8:50 AM">Section 1 — 8:00–8:50 AM</option>
+            <option value="Section 2 — 9:00–9:50 AM">Section 2 — 9:00–9:50 AM</option>
+            <option value="Other section">Other section</option>
+          </select>
+          <span class="field-error" id="sectionError" role="alert"></span>
+        </div>
+        <div class="field-wide conditional-field" id="otherSectionWrap" hidden>
+          <label for="otherSection">Enter your section</label>
+          <input id="otherSection" name="otherSection" aria-describedby="otherSectionError">
+          <span class="field-error" id="otherSectionError" role="alert"></span>
+        </div>
+        <button class="primary-button" type="submit">Assign my case</button>
+      </form>
+    </section>
+
+    <section class="workspace" id="workspace" hidden>
+      <aside class="case-rail" aria-label="Assignment information">
+        <p class="mode-badge" id="modeBadge">Official assignment</p>
+        <div class="case-number"><span>Case</span><strong id="caseNumber">—</strong><small>of 1</small></div>
+        <dl class="case-meta">
+          <div><dt>Gas</dt><dd id="gas">—</dd></div>
+          <div><dt>Given</dt><dd id="given">—</dd></div>
+          <div><dt>Find</dt><dd id="find">—</dd></div>
+        </dl>
+        <p class="assignment-note" id="assignmentNote"></p>
+      </aside>
+
+      <div class="quiz-column">
+        <section class="step" aria-labelledby="properties-heading">
+          <div class="step-heading"><span>01</span><div><p class="eyebrow">Calculate</p><h2 id="properties-heading">Determine Δh and Δu by both methods</h2></div></div>
+          <div class="property-grid" id="propertyInputs"></div>
+          <p class="helper">Enter values in kJ/kg. Small differences from table interpolation are accepted.</p>
+        </section>
+
+        <div class="actions">
+          <button class="secondary-button" id="hintButton" type="button">Give me a method hint</button>
+          <button class="primary-button" id="checkButton" type="button">Check my work</button>
+        </div>
+        <div class="hint" id="methodHint" hidden></div>
+        <section class="results" id="results" aria-live="polite" hidden></section>
+        <section class="practice-panel" id="practicePanel" aria-labelledby="practice-heading" hidden>
+          <p class="eyebrow">Official case complete</p>
+          <h2 id="practice-heading">Continue learning in Practice Mode</h2>
+          <p>Your official submission is protected. Practice cases provide the same feedback but do not change your official result.</p>
+          <div class="practice-actions">
+            <button class="primary-button" id="randomPractice" type="button">Try a random case</button>
+            <button class="secondary-button" id="nextPractice" type="button">Try the next case</button>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <footer><span>Thermodynamics teaching tool</span><span>© Dr. Nuha Aljuneidi</span></footer>
+  <script src="config.js"></script>
+  <script src="cases.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

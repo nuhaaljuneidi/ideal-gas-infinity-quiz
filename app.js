@@ -1,25 +1,139 @@
-const $=id=>document.getElementById(id), KEY='ideal-gas-preview:v1';
-const gasNames=['Air','Nitrogen','Oxygen','Carbon dioxide','Carbon monoxide'];
-let current, identity, mode='practice', attempt=0, fields=[];
-function hash(s){let h=2166136261;for(const c of s){h=Math.imul(h^c.charCodeAt(0),16777619)}return h>>>0}
-function close(a,b,abs=.05,rel=.01){return Number.isFinite(a)&&Number.isFinite(b)&&Math.abs(a-b)<=Math.max(abs,rel*Math.abs(b))}
-function val(id){const raw=$(id)?.value;return raw===undefined||raw.trim()===''?NaN:Number(raw)}
-function field(id,label,unit){fields.push(id);return `<div class="property-field"><label for="${id}">${label}</label><div class="input-row"><input id="${id}" type="number" step="any" inputmode="decimal"><span class="unit">${unit}</span></div><div id="f-${id}" class="feedback" aria-live="polite"></div></div>`}
-function step(n,title,body){return `<section class="step"><div class="step-heading"><span>0${n}</span><h2>${title}</h2></div>${body}</section>`}
-function interp(id,title){return `<details class="interp"><summary>${title} — optional interpolation worksheet</summary><p>y = ylow + (T − Tlow)/(Thigh − Tlow) × (yhigh − ylow). Use adjacent rows from the correct gas table. No extrapolation.</p><div class="grid">${field(id+'T','Target temperature','K')}${field(id+'L','Lower temperature','K')}${field(id+'H','Upper temperature','K')}${field(id+'Yl','Lower property','table units')}${field(id+'Yh','Upper property','table units')}${field(id+'Y','Interpolated result','table units')}</div></details>`}
-function generate(seed){return {id:seed,gas:gasNames[seed%5],T1:320+(seed%7)*15,T2:(seed%2?270:590)+(seed%5)*15,P1:100+(seed%4)*25,P2:125+(seed%3)*25,V1:Math.round((.6+(seed%4)*.2)*100)/100,unknown:['P2','V2','T2','m'][seed%4]}}
-function render(){fields=[];$('welcome').hidden=true;$('workspace').hidden=false;$('badge').textContent=mode==='practice'?'Practice preview':'Official preview — not connected';$('next').hidden=mode==='official';$('caseTitle').textContent=current.gas+' · '+(current.T2>current.T1?'heating':'cooling');let g=`<p>Case ${current.id}</p><p>State 1: P₁ = ${current.P1} kPa, V₁ = ${current.V1} m³, T₁ = ${current.T1} K</p>`;g+=`<p>State 2: ${current.unknown==='P2'?'P₂ = ?':`P₂ = ${current.P2} kPa`}, ${current.unknown==='T2'?'T₂ = ?':`T₂ = ${current.T2} K`}</p><p id="derivedGiven"></p><p>Find ${current.unknown}, v₁, v₂, Δu, Δh, ΔU, and ΔH using both methods.</p><p>Look up M and R̄ from A–1 first. The preview derives the remaining given once those values are entered.</p>`;$('givens').innerHTML=g;
-$('steps').innerHTML=step(1,'State properties',`<p>Use Table A–1 for ${current.gas}. Until verified data are loaded, M and R̄ cannot be independently graded.</p><div class="grid">${field('M','Molar mass M','kg/kmol')}${field('Rb','Universal gas constant R̄','kJ/(kmol·K)')}${field('R','Gas constant R','kJ/(kg·K)')}${field('m','Fixed mass m','kg')}${field('P2','Pressure P₂','kPa')}${field('V2','Total volume V₂','m³')}${field('T2','Temperature T₂','K')}${field('v1','Specific volume v₁','m³/kg')}${field('v2','Specific volume v₂','m³/kg')}</div>`)+step(2,'Constant-specific-heat method',`<p>Use A–20 for ${current.gas} at Tavg, with interpolation as needed. Hold cp and cv constant over this interval.</p><div class="grid">${field('avg','Average temperature','K')}${field('cp','cp at Tavg','kJ/(kg·K)')}${field('cv','cv at Tavg','kJ/(kg·K)')}${field('duc','Δu constant','kJ/kg')}${field('dhc','Δh constant','kJ/kg')}${field('DUc','ΔU constant','kJ')}${field('DHc','ΔH constant','kJ')}</div>${interp('icp','cp at Tavg')}${interp('icv','cv at Tavg')}`)+step(3,'Variable-specific-heat method',`<p>Use ${current.gas==='Air'?'A–22, specific properties in kJ/kg':'A–23, molar properties in kJ/kmol; divide the differences by M'}. Enter the matching gas and table.</p><label for="table">Table used</label><select id="table"><option value="">Choose</option><option>A–20</option><option>A–22</option><option>A–23</option></select><label for="lookupGas">Gas used</label><select id="lookupGas"><option value="">Choose</option>${gasNames.map(x=>`<option>${x}</option>`).join('')}</select><p id="tableFeedback" aria-live="polite"></p><div class="grid">${['u1','u2','h1','h2'].map(x=>field(x,(current.gas==='Air'?'':'Molar ')+x,current.gas==='Air'?'kJ/kg':'kJ/kmol')).join('')}${field('duv','Δu variable','kJ/kg')}${field('dhv','Δh variable','kJ/kg')}${field('DUv','ΔU variable','kJ')}${field('DHv','ΔH variable','kJ')}</div>${['u1','u2','h1','h2'].map(x=>interp('i'+x,x+' lookup')).join('')}`)+step(4,'Comparison',`<p>Compare magnitude and sign. Neither method is guaranteed always to give a higher result. Signed difference = constant − variable. Relative difference = 100 × |constant − variable| / |variable|; undefined when variable is zero and constant is nonzero.</p><div class="grid">${field('diffu','Signed Δu method difference','kJ/kg')}${field('diffh','Signed Δh method difference','kJ/kg')}</div><label for="reflection">Explain the comparison</label><textarea id="reflection"></textarea><p id="comparison"></p>`)+step(5,'Submit',`<p>Official saving is disabled until verified source data and a separate backend are configured. Work is restored locally on this browser. Table-dependent answers cannot yet receive an official grade.</p>`);
-for(const id of ['table','lookupGas','reflection'])fields.push(id);for(const id of fields)$(id).addEventListener('input',()=>{if(id==='M'||id==='Rb')derive();save()});derive();}
-function expected(){let R=val('Rb')/val('M');if(!(R>0&&val('M')>0&&val('Rb')>0))return null;let m=current.P1*current.V1/(R*current.T1),V2=m*R*current.T2/current.P2;return {R,m,P2:current.P2,V2,T2:current.T2,v1:current.V1/m,v2:V2/m,avg:(current.T1+current.T2)/2}}
-function derive(){let e=expected();$('derivedGiven').textContent=e?(current.unknown==='m'?`State 2: V₂ = ${e.V2.toPrecision(9)} m³`:`Fixed mass m = ${e.m.toPrecision(9)} kg`)+(current.unknown==='P2'||current.unknown==='T2'?`; V₂ = ${e.V2.toPrecision(9)} m³`:''):'Enter positive M and R̄ to derive the remaining given.'}
-function save(){try{localStorage.setItem(KEY,JSON.stringify({identity,mode,attempt,current,answers:Object.fromEntries(fields.map(id=>[id,$(id).value]))}))}catch{$('results').textContent='Browser storage unavailable. Keep this tab open to preserve work.'}}
-function check(){let e=expected(),fail=0;function test(id,target,hint='',abs=.05){let ok=close(val(id),target,abs);$('f-'+id).textContent=ok?'✓ Arithmetic consistent':'Check: '+(hint||'enter a value and review the equation.');$('f-'+id).className='feedback '+(ok?'correct':'incorrect');$(id).setAttribute('aria-invalid',String(!ok));if(!ok)fail++}
-if(!e){$('results').textContent='Enter positive molar mass and R̄ from Table A–1 first.';return}for(const [id,n]of Object.entries(e))test(id,n,id.includes('T')||id==='avg'?'Use Kelvin, not Celsius.':'Use kPa, m³, kg, and R in kJ/(kg·K); V is total volume.',id==='R'||id.startsWith('v')||id==='V2'||id==='m'?.001:.05);
-let dt=e.T2-current.T1;for(const [id,n]of Object.entries({duc:val('cv')*dt,dhc:val('cp')*dt,DUc:e.m*val('cv')*dt,DHc:e.m*val('cp')*dt}))test(id,n,id.startsWith('D')?'Multiply the specific energy change by mass; units are kJ.':'Use T₂ − T₁, including the cooling sign. Select cp and cv at Tavg, not automatically 300 K.');
-let scale=current.gas==='Air'?1:val('M'),du=(val('u2')-val('u1'))/scale,dh=(val('h2')-val('h1'))/scale;for(const [id,n]of Object.entries({duv:du,dhv:dh,DUv:e.m*du,DHv:e.m*dh}))test(id,n,id.startsWith('D')?'Multiply by mass for total kJ.':'Subtract state 1 from state 2; convert kJ/kmol to kJ/kg by dividing by M for gases other than air.');test('diffu',val('duc')-val('duv'));test('diffh',val('dhc')-val('dhv'));
-let tableOK=$('table').value===(current.gas==='Air'?'A–22':'A–23')&&$('lookupGas').value===current.gas;$('tableFeedback').textContent=tableOK?'✓ Correct table and gas selected.':'Select the correct gas and A–22 for air or A–23 for other gases.';if(!tableOK)fail++;
-for(const id of ['icp','icv','iu1','iu2','ih1','ih2']){if(!['T','L','H','Yl','Yh','Y'].some(s=>$(id+s).value!==''))continue;let t=val(id+'T'),lo=val(id+'L'),hi=val(id+'H'),target=id.startsWith('ic')?e.avg:id.endsWith('1')?current.T1:e.T2;if(!(hi>lo&&t>=lo&&t<=hi&&close(t,target,.05,.001))){$('f-'+id+'Y').textContent='Check bounds and target. No extrapolation; target must match Tavg or the state temperature.';fail++;continue}let result=val(id+'Yl')+(t-lo)/(hi-lo)*(val(id+'Yh')-val(id+'Yl'));test(id+'Y',result,'Use linear interpolation with the entered bounding rows.');let prop=id==='icp'?'cp':id==='icv'?'cv':id.slice(1);test(prop,result,'Transfer your interpolated result into the property field.',prop==='cp'||prop==='cv'?.002:.05)}
-function pct(a,b){return b===0?(a===0?'0% (both zero)':'undefined (zero reference)'):(100*Math.abs(a-b)/Math.abs(b)).toFixed(2)+'%'}$('comparison').textContent='Relative differences from entered values: Δu '+pct(val('duc'),val('duv'))+', Δh '+pct(val('dhc'),val('dhv'))+'.';$('results').textContent=fail?`${fail} arithmetic or selection checks need review. Table values remain unverified.`:'Arithmetic checks pass. Table values are unverified; this is not an official grade or submission.';save();}
-$('registration').onsubmit=event=>{event.preventDefault();identity={first:$('first').value.trim(),last:$('last').value.trim(),email:$('email').value.trim().toLowerCase(),section:$('section').value==='Other section'?$('other').value.trim():$('section').value};if(!identity.first||!identity.last||!identity.section||! /^[^\s@]+@my\.erau\.edu$/.test(identity.email))return;mode=$('mode').value;attempt=0;current=generate(hash(identity.email+'|ideal-gas-v1'));render();save()};$('section').onchange=()=>{$('otherWrap').hidden=$('section').value!=='Other section';$('other').required=!$('otherWrap').hidden};$('home').onclick=()=>{$('welcome').hidden=false;$('workspace').hidden=true};$('check').onclick=check;$('next').onclick=()=>{attempt++;current=generate(hash(identity.email+'|practice|'+attempt));render();save()};
-try{let saved=JSON.parse(localStorage.getItem(KEY));if(saved?.identity&&saved?.current){identity=saved.identity;mode=saved.mode;attempt=saved.attempt;current=saved.current;$('first').value=identity.first;$('last').value=identity.last;$('email').value=identity.email;$('mode').value=mode;render();for(const [id,value]of Object.entries(saved.answers||{}))if($(id))$(id).value=value;derive()}}catch{};
+const $=id=>document.getElementById(id);
+const ERAU_EMAIL_RE=/^[^\s@]+@my\.erau\.edu$/i;
+let activeCase=null,officialCaseNumber=null,quizMode="official",officialSubmitted=false,practiceAttempt=0,currentDisplayName="";
+
+function hash(text){let h=2166136261;for(const ch of text.trim().toLowerCase()){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
+function assignmentKey(email){return `idealgas-infinity:${email}`}
+function completionKey(email){return `idealgas-infinity:complete:${email}`}
+function assignCase(email){const key=assignmentKey(email);let n=Number(localStorage.getItem(key));if(!n||n<1||n>IDEALGAS_CASES.length){n=(hash(email)%IDEALGAS_CASES.length)+1;localStorage.setItem(key,String(n))}return IDEALGAS_CASES[n-1]}
+async function api(payload){if(!IDEALGAS_QUIZ_API)return null;const response=await fetch(IDEALGAS_QUIZ_API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});if(!response.ok)throw new Error("The assignment service is temporarily unavailable.");const data=await response.json();if(!data.ok)throw new Error(data.error||"The assignment service returned an error.");return data}
+
+function normalizeEmail(raw){return String(raw||"").trim().toLowerCase()}
+function isValidErauEmail(email){return ERAU_EMAIL_RE.test(email)}
+
+function currentSectionValue(){const select=$('courseSection');if(!select)return "";if(select.value==="Other section")return $('otherSection').value.trim();return select.value}
+
+function setupSectionToggle(){const select=$('courseSection'),wrap=$('otherSectionWrap'),other=$('otherSection');select.addEventListener('change',()=>{const isOther=select.value==="Other section";wrap.hidden=!isOther;other.required=isOther;if(!isOther){other.value="";other.setAttribute('aria-invalid','false');$('otherSectionError').textContent=""}$('sectionError').textContent="";select.setAttribute('aria-invalid','false')})}
+
+function validateIdentityForm(){let valid=true;
+  const firstName=$('firstName').value.trim();
+  const lastName=$('lastName').value.trim();
+  $('firstName').setAttribute('aria-invalid',firstName?'false':'true');
+  $('lastName').setAttribute('aria-invalid',lastName?'false':'true');
+  if(!firstName)valid=false;
+  if(!lastName)valid=false;
+
+  const email=normalizeEmail($('erauEmail').value);
+  const emailError=$('emailError');
+  if(!email||!isValidErauEmail(email)){
+    emailError.textContent="Enter your ERAU student email ending in @my.erau.edu.";
+    $('erauEmail').setAttribute('aria-invalid','true');
+    valid=false;
+  } else {
+    emailError.textContent="";
+    $('erauEmail').setAttribute('aria-invalid','false');
+  }
+
+  const sectionSelect=$('courseSection');
+  const sectionError=$('sectionError');
+  if(!sectionSelect.value){
+    sectionError.textContent="Select your course section.";
+    sectionSelect.setAttribute('aria-invalid','true');
+    valid=false;
+  } else {
+    sectionError.textContent="";
+    sectionSelect.setAttribute('aria-invalid','false');
+  }
+
+  if(sectionSelect.value==="Other section"){
+    const other=$('otherSection');
+    const otherError=$('otherSectionError');
+    if(!other.value.trim()){
+      otherError.textContent="Enter your section.";
+      other.setAttribute('aria-invalid','true');
+      valid=false;
+    } else {
+      otherError.textContent="";
+      other.setAttribute('aria-invalid','false');
+    }
+  }
+  return valid;
+}
+
+function setMode(mode){quizMode=mode;const practice=mode==="practice";$('modeBadge').textContent=practice?"Practice mode":"Official assignment";$('modeBadge').classList.toggle('practice',practice);$('checkButton').textContent=practice?"Check practice case":"Submit official case"}
+
+function resetResponses(){
+  activeCase.find.forEach((_,i)=>{const input=$(`prop${i}`);if(input){input.value="";input.disabled=false}});
+  $('results').hidden=true;
+  $('methodHint').hidden=true;
+  $('checkButton').disabled=false;
+}
+
+function renderCase(c,name,mode=quizMode){
+  activeCase=c;setMode(mode);
+  $('workspace').classList.remove('is-submitted');
+  $('practicePanel').hidden=true;
+  $('caseNumber').textContent=c.id;
+  $('gas').textContent=c.gas;
+  $('given').textContent=`T1 = ${c.T1} K, T2 = ${c.T2} K`;
+  $('find').textContent=c.find.map(p=>p.symbol).join('; ');
+  $('assignmentNote').textContent=mode==="official"?`Assigned to ${name}. This is your protected official Case ${c.id}.`:`Practice for ${name}. Case ${c.id} does not change your official Case ${officialCaseNumber}.`;
+  $('propertyInputs').innerHTML=c.find.map((p,i)=>`<div class="property-field"><label for="prop${i}">${p.symbol}</label><div class="input-row"><input id="prop${i}" type="number" inputmode="decimal" step="any" aria-describedby="unit${i}"><span class="unit" id="unit${i}">${p.unit}</span></div></div>`).join('');
+  resetResponses();
+}
+
+function showCompletedOfficial(name){officialSubmitted=true;setMode("official");$('workspace').classList.add('is-submitted');$('practicePanel').hidden=false;$('assignmentNote').textContent=`${name}'s official Case ${officialCaseNumber} has been submitted.`;$('results').hidden=true;$('practicePanel').scrollIntoView({behavior:'smooth',block:'center'})}
+function practiceCase(kind){let next;if(kind==="next")next=(activeCase?.id||officialCaseNumber)%IDEALGAS_CASES.length+1;else{do{next=Math.floor(Math.random()*IDEALGAS_CASES.length)+1}while(next===activeCase?.id&&IDEALGAS_CASES.length>1)}practiceAttempt+=1;renderCase(IDEALGAS_CASES[next-1],currentDisplayName,"practice");$('workspace').scrollIntoView({behavior:'smooth'})}
+
+setupSectionToggle();
+
+$('identityForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  if(!validateIdentityForm()){
+    const firstInvalid=document.querySelector('#identityForm [aria-invalid="true"]');
+    if(firstInvalid)firstInvalid.focus();
+    return;
+  }
+  const firstName=$('firstName').value.trim();
+  const lastName=$('lastName').value.trim();
+  const email=normalizeEmail($('erauEmail').value);
+  $('erauEmail').value=email;
+  const section=currentSectionValue();
+  const name=`${firstName} ${lastName}`.trim();
+  currentDisplayName=name;
+  const button=e.submitter;
+  button.disabled=true;button.textContent="Retrieving…";
+  try{
+    const remote=await api({action:"assign",firstName,lastName,email,section});
+    const c=remote?IDEALGAS_CASES[remote.caseNumber-1]:assignCase(email);
+    officialCaseNumber=c.id;
+    localStorage.setItem(assignmentKey(email),String(c.id));
+    officialSubmitted=Boolean(remote?.officialSubmitted)||localStorage.getItem(completionKey(email))==="1";
+    renderCase(c,name,"official");
+    $('welcome').hidden=true;$('workspace').hidden=false;
+    if(officialSubmitted)showCompletedOfficial(name);else $('workspace').scrollIntoView({behavior:'smooth'})
+  }catch(error){alert(error.message)}
+  finally{button.disabled=false;button.textContent="Assign my case"}
+});
+$('hintButton').addEventListener('click',()=>{
+  $('methodHint').textContent="Constant-specific-heat method: find Tavg = (T1+T2)/2, then read cp and cv for the gas from Table A-20 at Tavg (interpolate between rows if Tavg isn't listed). Δh = cp·(T2−T1); Δu = cv·(T2−T1). Variable-specific-heat method: for air, read h and u directly from Table A-22 at T1 and T2; for other gases, read molar h̄ and ū from Table A-23 and divide by the molar mass M from Table A-1. Either way, Δh = h2−h1 and Δu = u2−u1.";
+  $('methodHint').hidden=false;
+});
+$('checkButton').addEventListener('click',async()=>{
+  if(!activeCase)return;
+  const checks=activeCase.find.map((p,i)=>{const raw=$(`prop${i}`).value;const entered=raw===""?NaN:Number(raw);const tol=Math.max(Math.abs(p.value)*p.tolerancePercent/100,0.00001);return {p,entered,ok:Number.isFinite(entered)&&Math.abs(entered-p.value)<=tol}});
+  const all=checks.every(x=>x.ok);
+  const r=$('results');
+  r.className=`results${all?' success':''}`;
+  r.innerHTML=`<h2>${all?'Energy changes verified':'Review your work'}</h2><ul class="result-list">${checks.map(x=>`<li class="${x.ok?'correct':'incorrect'}">${x.p.symbol}: ${x.ok?'within the accepted table range':'check the table value, interpolation, and units'}</li>`).join('')}</ul>${all?`<p><strong>${quizMode==="official"?'Official case complete.':'Practice case complete.'}</strong></p>`:'<p>Revise only the marked items, then check again.</p>'}`;
+  r.hidden=false;
+  r.scrollIntoView({behavior:'smooth',block:'nearest'});
+  const email=normalizeEmail($('erauEmail').value);
+  const payload={action:"submit",mode:quizMode,firstName:$('firstName').value.trim(),lastName:$('lastName').value.trim(),email,section:currentSectionValue(),caseNumber:activeCase.id,attemptNumber:quizMode==="practice"?practiceAttempt:1,answers:checks.map(x=>({symbol:x.p.symbol,value:Number.isFinite(x.entered)?x.entered:null,correct:x.ok})),complete:all};
+  try{await api(payload)}catch(error){r.insertAdjacentHTML('beforeend',`<p class="incorrect">Your work was checked, but it was not recorded. ${error.message}</p>`);return}
+  if(all&&quizMode==="official"){localStorage.setItem(completionKey(payload.email),"1");setTimeout(()=>showCompletedOfficial(currentDisplayName),550)}
+  else if(all&&quizMode==="practice"){$('practicePanel').hidden=false;$('practicePanel').querySelector('.eyebrow').textContent="Practice case complete";$('practicePanel').querySelector('h2').textContent="Choose another case"}
+});
+$('randomPractice').addEventListener('click',()=>practiceCase("random"));
+$('nextPractice').addEventListener('click',()=>practiceCase("next"));
+$('startOver').addEventListener('click',()=>location.reload());
