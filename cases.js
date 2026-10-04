@@ -30,7 +30,7 @@ const IDEALGAS_CASES = [
   // ---- SI cases (T in K), 1-20 ----
   { id: 1,  gas: "Air", units:"si", T1: 300, T2: 450, find: [dh(151.58,SI), du(108.53,SI), dhv(151.61,SI,"A-22"), duv(108.55,SI,"A-22")] },
   { id: 2,  gas: "Air", units:"si", T1: 350, T2: 600, find: [dh(256.13,SI), du(184.38,SI), dhv(256.53,SI,"A-22"), duv(184.76,SI,"A-22")] },
-  { id: 3,  gas: "Air", units:"si", T1: 550, T2: 850, find: [dh(322.50,SI), du(236.40,SI), dhv(311.34,SI,"A-22"), duv(228.09,SI,"A-22")] },
+  { id: 3,  gas: "Air", units:"si", T1: 550, T2: 850, find: [dh(322.50,SI), du(236.40,SI), dhv(322.44,SI,"A-22"), duv(236.32,SI,"A-22")] },
   { id: 4,  gas: "Air", units:"si", T1: 330, T2: 590, find: [dh(265.67,SI), du(191.05,SI), dhv(266.18,SI,"A-22"), duv(191.54,SI,"A-22")] },
 
   { id: 5,  gas: "N2",  units:"si", T1: 300, T2: 500, find: [dh(208.80,SI), du(149.40,SI), dhv(209.14,SI,"A-23"), duv(149.73,SI,"A-23")] },
@@ -60,7 +60,7 @@ const IDEALGAS_CASES = [
   { id: 24, gas: "Air", units:"english", T1: 700, T2: 1000, find: [dh(73.44,EN), du(52.74,EN), dhv(73.42,EN,"A-22E"), duv(52.85,EN,"A-22E")] },
 
   { id: 25, gas: "N2",  units:"english", T1: 520, T2: 700,  find: [dh(44.73,EN), du(32.04,EN), dhv(44.76,EN,"A-23E"), duv(32.00,EN,"A-23E")] },
-  { id: 26, gas: "N2",  units:"english", T1: 540, T2: 800,  find: [dh(64.77,EN), du(46.31,EN), dhv(64.77,EN,"A-23E"), duv(46.31,EN,"A-23E")] },
+  { id: 26, gas: "N2",  units:"english", T1: 540, T2: 800,  find: [dh(64.77,EN), du(46.31,EN), dhv(64.77,EN,"A-23E"), duv(46.33,EN,"A-23E")] },
   { id: 27, gas: "N2",  units:"english", T1: 600, T2: 900,  find: [dh(74.97,EN), du(53.67,EN), dhv(74.98,EN,"A-23E"), duv(53.71,EN,"A-23E")] },
   { id: 28, gas: "N2",  units:"english", T1: 700, T2: 1000, find: [dh(75.27,EN), du(53.97,EN), dhv(75.44,EN,"A-23E"), duv(54.17,EN,"A-23E")] },
 
@@ -76,6 +76,6 @@ const IDEALGAS_CASES = [
 
   { id: 37, gas: "CO",  units:"english", T1: 520, T2: 700,  find: [dh(44.82,EN), du(32.13,EN), dhv(44.80,EN,"A-23E"), duv(32.03,EN,"A-23E")] },
   { id: 38, gas: "CO",  units:"english", T1: 560, T2: 820,  find: [dh(64.90,EN), du(46.62,EN), dhv(64.97,EN,"A-23E"), duv(46.54,EN,"A-23E")] },
-  { id: 39, gas: "CO",  units:"english", T1: 620, T2: 920,  find: [dh(75.36,EN), du(54.06,EN), dhv(75.39,EN,"A-23E"), duv(54.13,EN,"A-23E")] },
+  { id: 39, gas: "CO",  units:"english", T1: 620, T2: 920,  find: [dh(75.36,EN), du(54.06,EN), dhv(75.39,EN,"A-23E"), duv(54.12,EN,"A-23E")] },
   { id: 40, gas: "CO",  units:"english", T1: 700, T2: 1020, find: [dh(80.96,EN), du(58.24,EN), dhv(81.06,EN,"A-23E"), duv(58.37,EN,"A-23E")] },
 ];
